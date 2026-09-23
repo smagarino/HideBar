@@ -17,6 +17,33 @@ public enum MenuBarGeometry {
     }
 }
 
+/// The part of a screen these rules need. Keeping it to plain values lets a
+/// test describe a two-display arrangement without a real display.
+public struct ScreenBounds: Equatable, Sendable {
+    public let frame: CGRect
+    public let visibleMaxY: CGFloat
+    public init(frame: CGRect, visibleMaxY: CGFloat) {
+        self.frame = frame
+        self.visibleMaxY = visibleMaxY
+    }
+}
+
+public enum ScreenRules {
+    /// Pick the screen the pointer is on, not the main one.
+    ///
+    /// Each display has its own menu bar at its own height. Measuring a pointer
+    /// on one display against another display's menu bar gives a wrong answer,
+    /// which on a stacked arrangement is wrong by more than a thousand points.
+    ///
+    /// Displays can be arranged with gaps between them, so a pointer may sit on
+    /// no screen at all. Fall back to the main screen rather than give up.
+    public static func screen(containing point: CGPoint,
+                              screens: [ScreenBounds],
+                              main: ScreenBounds?) -> ScreenBounds? {
+        screens.first { $0.frame.contains(point) } ?? main
+    }
+}
+
 // MARK: - Clicks on the chevron
 
 public enum ClickAction: Equatable, Sendable {

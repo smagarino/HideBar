@@ -104,15 +104,26 @@ final class StatusBarController {
         }
     }
 
+    /// The screen the pointer is on, reduced to the values the rules need.
+    private func screenBounds(under point: CGPoint) -> ScreenBounds? {
+        ScreenRules.screen(
+            containing: point,
+            screens: NSScreen.screens.map {
+                ScreenBounds(frame: $0.frame, visibleMaxY: $0.visibleFrame.maxY)
+            },
+            main: NSScreen.main.map {
+                ScreenBounds(frame: $0.frame, visibleMaxY: $0.visibleFrame.maxY)
+            })
+    }
+
     private func pointerMoved() {
         let point = NSEvent.mouseLocation
-        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(point) })
-                ?? NSScreen.main else { return }
+        guard let screen = screenBounds(under: point) else { return }
 
         switch HoverRules.decide(pointer: point,
                                  chevron: toggleItem.button?.window?.frame,
                                  screenMaxY: screen.frame.maxY,
-                                 visibleMaxY: screen.visibleFrame.maxY,
+                                 visibleMaxY: screen.visibleMaxY,
                                  reveal: reveal,
                                  revealedByHover: revealedByHover) {
         case .doNothing:
@@ -270,12 +281,11 @@ final class StatusBarController {
             matching: [.leftMouseDown, .rightMouseDown]
         ) { [weak self] _ in
             let point = NSEvent.mouseLocation
-            guard let screen = NSScreen.screens.first(where: { $0.frame.contains(point) })
-                    ?? NSScreen.main else { return }
+            guard let self, let screen = self.screenBounds(under: point) else { return }
             if OutsideClickRules.shouldCollapse(pointer: point,
                                                 screenMaxY: screen.frame.maxY,
-                                                visibleMaxY: screen.visibleFrame.maxY) {
-                self?.collapse()
+                                                visibleMaxY: screen.visibleMaxY) {
+                self.collapse()
             }
         }
     }

@@ -182,6 +182,10 @@ Several tests exist because those bugs happened:
 | A clicked reveal survives the pointer leaving | Clicking the chevron would otherwise be useless |
 | A click in the menu bar does not hide | Would pull an icon away mid-click |
 | Option-click is ordinary without the second section | Would do nothing at all |
+| The pointer is judged against the screen it is on | On a stacked second display, a hover reveal would never hide again |
+
+Multi-display arrangements are covered too, including a second display stacked
+above the laptop, and a pointer in a gap between displays.
 
 What is left is the AppKit glue that applies those decisions to real status
 items. Testing that needs a real menu bar, so it is checked by hand.

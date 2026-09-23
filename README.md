@@ -131,9 +131,19 @@ Then relaunch HideBar.
 
 ## What it does not do
 
-This covers the core hide/show feature only. Not implemented: menu bar search,
-hover-to-reveal, triggered presets (show on Wi-Fi change and similar), a second
-menu bar row for notched Macs, and per-item always-hidden sections.
+Not implemented: menu bar search, triggered presets (show on Wi-Fi change and
+similar), a second menu bar row for notched Macs, and per-item always-hidden
+sections.
+
+**Menu bar search is a deliberate omission.** To read the name of another app's
+menu bar icon, or to click one, an app needs the Accessibility API. That needs
+the Accessibility permission, which needs an administrator password. Without it
+macOS reports every system icon under one name, `Control Center`, and refuses
+every click you send.
+
+Search would therefore cost HideBar the property that makes it worth using: it
+asks for no permission at all. Bartender does implement search, and it asks for
+that permission to do so.
 
 If you want those, [Ice](https://github.com/jordanbaird/Ice) is a free and
 actively maintained app that goes much further, and Bartender itself is the paid

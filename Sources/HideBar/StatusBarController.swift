@@ -21,6 +21,10 @@ final class StatusBarController {
     private var toggleItem: NSStatusItem!
     private var separatorItem: NSStatusItem!
 
+    /// Second separator. Items parked to its left stay hidden even while the
+    /// ordinary hidden section shows. Created only when the user asks for it.
+    private var alwaysHiddenSeparator: NSStatusItem?
+
     private var autoHideTimer: Timer?
     private var outsideClickMonitor: Any?
     private var hoverMonitor: Any?
@@ -31,14 +35,28 @@ final class StatusBarController {
     /// bar, which a reveal the user clicked for must not do.
     private var revealedByHover = false
 
-    private(set) var collapsed: Bool = Prefs.collapsed {
+    /// How much of the menu bar is on show.
+    enum Reveal {
+        /// Only the items to the right of the first separator.
+        case none
+        /// Plus the ordinary hidden section.
+        case hidden
+        /// Plus the always-hidden section.
+        case all
+    }
+
+    private(set) var reveal: Reveal = Prefs.collapsed ? .none : .hidden {
         didSet {
-            Prefs.collapsed = collapsed
-            if collapsed { revealedByHover = false }
+            // Only the ordinary hidden state is restored at launch. Starting up
+            // with everything on show would defeat the point of the app.
+            Prefs.collapsed = (reveal == .none)
+            if reveal == .none { revealedByHover = false }
             render()
-            collapsed ? stopWatchers() : startWatchers()
+            reveal == .none ? stopWatchers() : startWatchers()
         }
     }
+
+    var collapsed: Bool { reveal == .none }
 
     // MARK: - Setup
 
@@ -57,6 +75,7 @@ final class StatusBarController {
         separatorItem.autosaveName = "hidebar.separator"
         separatorItem.button?.image = symbol("ellipsis.circle", "Separator")
 
+        applyAlwaysHiddenSection()
         render()
         if !collapsed { startWatchers() }
         applyHotkeyPreference()
@@ -146,43 +165,81 @@ final class StatusBarController {
     // MARK: - Rendering
 
     private func render() {
-        if collapsed {
-            separatorItem.length = Self.collapsedWidth
-            toggleItem.length = Self.toggleWidth
-            separatorItem.button?.image = nil
-            toggleItem.button?.image = symbol("chevron.left", "Show hidden menu bar items")
-            toggleItem.button?.toolTip = "Show hidden menu bar items"
-        } else {
-            separatorItem.length = Self.expandedWidth
-            toggleItem.length = Self.toggleWidth
-            separatorItem.button?.image = symbol("ellipsis.circle", "Separator")
-            toggleItem.button?.image = symbol("chevron.right", "Hide menu bar items")
-            toggleItem.button?.toolTip = "Hide menu bar items"
+        toggleItem.length = Self.toggleWidth
+
+        let showsHidden = (reveal != .none)
+        separatorItem.length = showsHidden ? Self.expandedWidth : Self.collapsedWidth
+        separatorItem.button?.image = showsHidden ? symbol("ellipsis.circle", "Separator") : nil
+
+        if let always = alwaysHiddenSeparator {
+            // Stretch it only while the ordinary section shows and this one must
+            // not. When everything is collapsed the first separator already
+            // pushes this one off-screen, so leave it small: two enormous items
+            // at once overflow the layout.
+            let mustPush = (reveal == .hidden)
+            always.length = mustPush ? Self.collapsedWidth : Self.expandedWidth
+            always.button?.image = mustPush
+                ? nil : symbol("eye.slash.circle", "Always hidden separator")
         }
+
+        toggleItem.button?.image = symbol(
+            showsHidden ? "chevron.right" : "chevron.left",
+            showsHidden ? "Hide menu bar items" : "Show hidden menu bar items")
+        toggleItem.button?.toolTip = showsHidden
+            ? "Hide menu bar items" : "Show hidden menu bar items"
+    }
+
+    /// Create or remove the second separator to match the preference.
+    func applyAlwaysHiddenSection() {
+        if Prefs.alwaysHiddenSection {
+            guard alwaysHiddenSeparator == nil else { return }
+            // Created last, so it lands to the left of the first separator.
+            let item = NSStatusBar.system.statusItem(withLength: Self.expandedWidth)
+            item.autosaveName = "hidebar.alwaysHiddenSeparator"
+            item.button?.image = symbol("eye.slash.circle", "Always hidden separator")
+            item.button?.toolTip = "Items left of this stay hidden"
+            alwaysHiddenSeparator = item
+        } else {
+            if let item = alwaysHiddenSeparator {
+                NSStatusBar.system.removeStatusItem(item)
+            }
+            alwaysHiddenSeparator = nil
+            if reveal == .all { reveal = .hidden }
+        }
+        render()
     }
 
     // MARK: - Actions
 
     @objc private func toggleClicked() {
-        if NSApp.currentEvent?.type == .rightMouseUp {
+        guard let event = NSApp.currentEvent else { return }
+        if event.type == .rightMouseUp {
             showMenu()
-        } else {
-            collapsed ? expand() : collapse(userInitiated: true)
+            return
         }
+        // Option-click reaches the always-hidden section.
+        if event.modifierFlags.contains(.option), alwaysHiddenSeparator != nil {
+            reveal = (reveal == .all) ? .none : .all
+            return
+        }
+        collapsed ? expand() : collapse(userInitiated: true)
     }
 
-    func expand() { if collapsed { collapsed = false } }
+    func expand() { if reveal == .none { reveal = .hidden } }
+
+    /// Show every item, including the always-hidden section.
+    func showAll() { reveal = .all }
 
     /// Collapsing while the toggle sits to the LEFT of the separator would push
     /// the toggle off-screen too, leaving no way to bring it back — and
     /// `autosaveName` would faithfully restore that broken layout on relaunch.
     func collapse(userInitiated: Bool = false) {
-        guard !collapsed else { return }
+        guard reveal != .none else { return }
         guard toggleIsRightOfSeparator else {
             if userInitiated { warnAboutTogglePosition() }
             return
         }
-        collapsed = true
+        reveal = .none
     }
 
     private var toggleIsRightOfSeparator: Bool {

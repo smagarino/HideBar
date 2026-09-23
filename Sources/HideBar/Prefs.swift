@@ -15,6 +15,7 @@ enum Prefs {
         static let revealOnPowerChange = "hidebar.pref.revealOnPowerChange"
         static let revealOnLowBattery = "hidebar.pref.revealOnLowBattery"
         static let revealOnDisplayChange = "hidebar.pref.revealOnDisplayChange"
+        static let alwaysHiddenSection = "hidebar.pref.alwaysHiddenSection"
     }
 
     /// Whether the hidden section was collapsed when we last quit.
@@ -76,5 +77,13 @@ enum Prefs {
     static var revealOnDisplayChange: Bool {
         get { d.object(forKey: Key.revealOnDisplayChange) as? Bool ?? false }
         set { d.set(newValue, forKey: Key.revealOnDisplayChange) }
+    }
+
+    /// Add a second separator, and with it a section that stays hidden even
+    /// when the ordinary hidden section shows. Off by default: a third status
+    /// item costs menu bar space, which is the scarce resource here.
+    static var alwaysHiddenSection: Bool {
+        get { d.object(forKey: Key.alwaysHiddenSection) as? Bool ?? false }
+        set { d.set(newValue, forKey: Key.alwaysHiddenSection) }
     }
 }

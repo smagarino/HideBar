@@ -38,12 +38,28 @@ Right-click the chevron for options:
 | --- | --- |
 | Auto-hide | Hide again after 5s / 10s / 30s / 1 min, or Never |
 | Hide when clicking elsewhere | Hide again as soon as you click outside the menu bar |
+| Always-hidden section | Add a second separator for items you almost never need |
+| Show all items | Reveal the always-hidden section too, same as option-clicking the chevron |
 | Reveal automatically | Show the icons when the power source changes, the battery is low, or a display is connected |
 | Reveal on hover | Show the icons when the pointer rests on the chevron, with no click |
 | Slim mode | Shrink both icons, from about 62 to about 40 points |
 | Keyboard shortcut | Hide and show with ⌃⌥⌘B |
 | Open at Login | Start HideBar when you log in |
 | Quit HideBar | Exit |
+
+### Always-hidden section
+
+Turn this on and a second separator appears. You then have three zones:
+
+| Zone | Where | Shows when |
+| --- | --- | --- |
+| Always visible | Right of the ⋯ separator | Always |
+| Hidden | Between the two separators | You click the chevron |
+| Always hidden | Left of the second separator | You option-click the chevron, or pick **Show all items** |
+
+Drag icons between the zones the same way, with ⌘ held down.
+
+This costs a third status item, so it costs menu bar space. It is off by default.
 
 ### Reveal automatically
 
@@ -147,8 +163,7 @@ Then relaunch HideBar.
 
 ## What it does not do
 
-Not implemented: menu bar search, a second menu bar row for notched Macs, and per-item always-hidden
-sections.
+Not implemented: menu bar search and a second menu bar row for notched Macs.
 
 **Menu bar search is a deliberate omission.** To read the name of another app's
 menu bar icon, or to click one, an app needs the Accessibility API. That needs

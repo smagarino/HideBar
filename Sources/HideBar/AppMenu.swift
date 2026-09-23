@@ -41,6 +41,25 @@ enum AppMenu {
         outside.state = Prefs.hideOnOutsideClick ? .on : .off
         menu.addItem(outside)
 
+        let alwaysHidden = NSMenuItem(
+            title: "Always-hidden section",
+            action: #selector(MenuHandler.toggleAlwaysHiddenSection), keyEquivalent: "")
+        alwaysHidden.target = handler
+        alwaysHidden.state = Prefs.alwaysHiddenSection ? .on : .off
+        alwaysHidden.toolTip = "Add a second separator for items you rarely need"
+        menu.addItem(alwaysHidden)
+
+        if Prefs.alwaysHiddenSection {
+            let showAll = NSMenuItem(
+                title: "Show all items",
+                action: #selector(MenuHandler.showAllItems), keyEquivalent: "")
+            showAll.target = handler
+            showAll.toolTip = "Option-click the chevron does the same"
+            menu.addItem(showAll)
+        }
+
+        menu.addItem(.separator())
+
         let triggers = NSMenuItem(title: "Reveal automatically", action: nil, keyEquivalent: "")
         let triggerMenu = NSMenu()
         let triggerOptions: [(String, Bool, Selector)] = [
@@ -116,6 +135,15 @@ final class MenuHandler: NSObject {
 
     @objc func toggleOutsideClick() {
         Prefs.hideOnOutsideClick.toggle()
+    }
+
+    @objc func toggleAlwaysHiddenSection() {
+        Prefs.alwaysHiddenSection.toggle()
+        controller?.applyAlwaysHiddenSection()
+    }
+
+    @objc func showAllItems() {
+        controller?.showAll()
     }
 
     @objc func togglePowerTrigger() {

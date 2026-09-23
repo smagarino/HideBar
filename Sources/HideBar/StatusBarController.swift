@@ -11,7 +11,12 @@ final class StatusBarController {
     /// Width the separator takes when collapsed. AppKit clamps this to the
     /// space actually available, which is exactly what we want.
     private static let collapsedWidth: CGFloat = 10_000
-    private static let expandedWidth: CGFloat = 20
+    /// Width of the separator while expanded. Slim mode trades a comfortable
+    /// click target for roughly 45 points of menu bar space.
+    private static var expandedWidth: CGFloat { Prefs.slimMode ? 1 : 20 }
+
+    /// Width of the toggle. Normal mode lets the image size it.
+    private static var toggleWidth: CGFloat { NSStatusItem.variableLength }
 
     private var toggleItem: NSStatusItem!
     private var separatorItem: NSStatusItem!
@@ -32,7 +37,7 @@ final class StatusBarController {
     func install() {
         // Order matters: a newly created item is placed to the LEFT of existing
         // ones, so creating the toggle first leaves the separator on its left.
-        toggleItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        toggleItem = NSStatusBar.system.statusItem(withLength: Self.toggleWidth)
         toggleItem.autosaveName = "hidebar.toggle"
         if let button = toggleItem.button {
             button.target = self
@@ -46,12 +51,35 @@ final class StatusBarController {
 
         render()
         if !collapsed { startWatchers() }
+        applyHotkeyPreference()
+    }
+
+    /// Register or drop the global shortcut to match the preference.
+    func applyHotkeyPreference() {
+        if Prefs.hotkeyEnabled {
+            let ok = HotKey.shared.register { [weak self] in
+                guard let self else { return }
+                self.collapsed ? self.expand() : self.collapse(userInitiated: true)
+            }
+            if !ok { Prefs.hotkeyEnabled = false }
+        } else {
+            HotKey.shared.unregister()
+        }
     }
 
     private func symbol(_ name: String, _ label: String) -> NSImage? {
-        let image = NSImage(systemSymbolName: name, accessibilityDescription: label)
+        let config = NSImage.SymbolConfiguration(
+            pointSize: Prefs.slimMode ? 9 : 13, weight: .regular)
+        let image = NSImage(systemSymbolName: name, accessibilityDescription: label)?
+            .withSymbolConfiguration(config)
         image?.isTemplate = true
         return image
+    }
+
+    /// Re-apply the widths after slim mode changes.
+    func refreshSizing() {
+        toggleItem.length = Self.toggleWidth
+        render()
     }
 
     // MARK: - Rendering
@@ -59,11 +87,13 @@ final class StatusBarController {
     private func render() {
         if collapsed {
             separatorItem.length = Self.collapsedWidth
+            toggleItem.length = Self.toggleWidth
             separatorItem.button?.image = nil
             toggleItem.button?.image = symbol("chevron.left", "Show hidden menu bar items")
             toggleItem.button?.toolTip = "Show hidden menu bar items"
         } else {
             separatorItem.length = Self.expandedWidth
+            toggleItem.length = Self.toggleWidth
             separatorItem.button?.image = symbol("ellipsis.circle", "Separator")
             toggleItem.button?.image = symbol("chevron.right", "Hide menu bar items")
             toggleItem.button?.toolTip = "Hide menu bar items"

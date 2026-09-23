@@ -9,6 +9,8 @@ enum Prefs {
         static let collapsed = "hidebar.state.collapsed"
         static let autoHideDelay = "hidebar.pref.autoHideDelay"
         static let hideOnOutsideClick = "hidebar.pref.hideOnOutsideClick"
+        static let slimMode = "hidebar.pref.slimMode"
+        static let hotkeyEnabled = "hidebar.pref.hotkeyEnabled"
     }
 
     /// Whether the hidden section was collapsed when we last quit.
@@ -27,5 +29,19 @@ enum Prefs {
     static var hideOnOutsideClick: Bool {
         get { d.object(forKey: Key.hideOnOutsideClick) as? Bool ?? true }
         set { d.set(newValue, forKey: Key.hideOnOutsideClick) }
+    }
+
+    /// Shrink both status items so they fit an already crowded menu bar.
+    /// A MacBook with a notch can leave less room than the normal size needs.
+    static var slimMode: Bool {
+        get { d.object(forKey: Key.slimMode) as? Bool ?? false }
+        set { d.set(newValue, forKey: Key.slimMode) }
+    }
+
+    /// Toggle with a global keyboard shortcut. Useful in slim mode, where the
+    /// chevron is a small target.
+    static var hotkeyEnabled: Bool {
+        get { d.object(forKey: Key.hotkeyEnabled) as? Bool ?? true }
+        set { d.set(newValue, forKey: Key.hotkeyEnabled) }
     }
 }

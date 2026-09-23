@@ -38,8 +38,22 @@ Right-click the chevron for options:
 | --- | --- |
 | Auto-hide | Hide again after 5s / 10s / 30s / 1 min, or Never |
 | Hide when clicking elsewhere | Hide again as soon as you click outside the menu bar |
+| Slim mode | Shrink both icons, from about 62 to about 40 points |
+| Keyboard shortcut | Hide and show with ⌃⌥⌘B |
 | Open at Login | Start HideBar when you log in |
 | Quit HideBar | Exit |
+
+### Slim mode and the keyboard shortcut
+
+Every status item carries about 16 points of padding that no app can remove.
+Two items therefore cost about 34 points at the very least. Slim mode uses a
+smaller chevron and a hairline separator to get close to that floor, which saves
+about 22 points. It does not make HideBar fit a menu bar with no room at all.
+
+The shortcut ⌃⌥⌘B hides and shows the icons without clicking. It is useful in
+slim mode, where the chevron is a small target. HideBar registers it through
+Carbon, so it needs no Accessibility permission. If another app already owns the
+shortcut, HideBar tells you and turns the setting back off.
 
 Your icon arrangement, the hidden/shown state, and all settings survive a restart.
 

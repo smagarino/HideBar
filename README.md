@@ -38,11 +38,27 @@ Right-click the chevron for options:
 | --- | --- |
 | Auto-hide | Hide again after 5s / 10s / 30s / 1 min, or Never |
 | Hide when clicking elsewhere | Hide again as soon as you click outside the menu bar |
+| Reveal automatically | Show the icons when the power source changes, the battery is low, or a display is connected |
 | Reveal on hover | Show the icons when the pointer rests on the chevron, with no click |
 | Slim mode | Shrink both icons, from about 62 to about 40 points |
 | Keyboard shortcut | Hide and show with ⌃⌥⌘B |
 | Open at Login | Start HideBar when you log in |
 | Quit HideBar | Exit |
+
+### Reveal automatically
+
+Three system events can reveal the icons for you. The auto-hide timer then hides
+them again.
+
+| Trigger | Fires when |
+| --- | --- |
+| Power source changes | The Mac moves between mains power and battery |
+| Battery is low | The battery reaches 20 percent or less, once per discharge |
+| Display is connected | A display is plugged in or unplugged |
+
+All three read the state of this Mac through system notifications. None of them
+read another app, so none need the Accessibility permission. All are off by
+default.
 
 ### Reveal on hover
 
@@ -131,8 +147,7 @@ Then relaunch HideBar.
 
 ## What it does not do
 
-Not implemented: menu bar search, triggered presets (show on Wi-Fi change and
-similar), a second menu bar row for notched Macs, and per-item always-hidden
+Not implemented: menu bar search, a second menu bar row for notched Macs, and per-item always-hidden
 sections.
 
 **Menu bar search is a deliberate omission.** To read the name of another app's

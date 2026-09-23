@@ -12,6 +12,9 @@ enum Prefs {
         static let slimMode = "hidebar.pref.slimMode"
         static let hotkeyEnabled = "hidebar.pref.hotkeyEnabled"
         static let hoverToReveal = "hidebar.pref.hoverToReveal"
+        static let revealOnPowerChange = "hidebar.pref.revealOnPowerChange"
+        static let revealOnLowBattery = "hidebar.pref.revealOnLowBattery"
+        static let revealOnDisplayChange = "hidebar.pref.revealOnDisplayChange"
     }
 
     /// Whether the hidden section was collapsed when we last quit.
@@ -51,5 +54,27 @@ enum Prefs {
     static var hoverToReveal: Bool {
         get { d.object(forKey: Key.hoverToReveal) as? Bool ?? false }
         set { d.set(newValue, forKey: Key.hoverToReveal) }
+    }
+
+    // MARK: Triggers
+    // Each one reveals the icons when something happens on this Mac. The
+    // auto-hide timer then hides them again.
+
+    /// The Mac moved between mains power and battery.
+    static var revealOnPowerChange: Bool {
+        get { d.object(forKey: Key.revealOnPowerChange) as? Bool ?? false }
+        set { d.set(newValue, forKey: Key.revealOnPowerChange) }
+    }
+
+    /// The battery fell to 20 percent or less.
+    static var revealOnLowBattery: Bool {
+        get { d.object(forKey: Key.revealOnLowBattery) as? Bool ?? false }
+        set { d.set(newValue, forKey: Key.revealOnLowBattery) }
+    }
+
+    /// A display was connected or disconnected.
+    static var revealOnDisplayChange: Bool {
+        get { d.object(forKey: Key.revealOnDisplayChange) as? Bool ?? false }
+        set { d.set(newValue, forKey: Key.revealOnDisplayChange) }
     }
 }

@@ -41,6 +41,25 @@ enum AppMenu {
         outside.state = Prefs.hideOnOutsideClick ? .on : .off
         menu.addItem(outside)
 
+        let triggers = NSMenuItem(title: "Reveal automatically", action: nil, keyEquivalent: "")
+        let triggerMenu = NSMenu()
+        let triggerOptions: [(String, Bool, Selector)] = [
+            ("When the power source changes", Prefs.revealOnPowerChange,
+             #selector(MenuHandler.togglePowerTrigger)),
+            ("When the battery is low", Prefs.revealOnLowBattery,
+             #selector(MenuHandler.toggleLowBatteryTrigger)),
+            ("When a display is connected", Prefs.revealOnDisplayChange,
+             #selector(MenuHandler.toggleDisplayTrigger)),
+        ]
+        for (title, isOn, action) in triggerOptions {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+            item.target = handler
+            item.state = isOn ? .on : .off
+            triggerMenu.addItem(item)
+        }
+        triggers.submenu = triggerMenu
+        menu.addItem(triggers)
+
         let hover = NSMenuItem(
             title: "Reveal on hover",
             action: #selector(MenuHandler.toggleHoverToReveal), keyEquivalent: "")
@@ -97,6 +116,21 @@ final class MenuHandler: NSObject {
 
     @objc func toggleOutsideClick() {
         Prefs.hideOnOutsideClick.toggle()
+    }
+
+    @objc func togglePowerTrigger() {
+        Prefs.revealOnPowerChange.toggle()
+        controller?.applyTriggerPreferences()
+    }
+
+    @objc func toggleLowBatteryTrigger() {
+        Prefs.revealOnLowBattery.toggle()
+        controller?.applyTriggerPreferences()
+    }
+
+    @objc func toggleDisplayTrigger() {
+        Prefs.revealOnDisplayChange.toggle()
+        controller?.applyTriggerPreferences()
     }
 
     @objc func toggleHoverToReveal() {

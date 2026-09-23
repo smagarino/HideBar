@@ -61,6 +61,14 @@ final class StatusBarController {
         if !collapsed { startWatchers() }
         applyHotkeyPreference()
         applyHoverPreference()
+        applyTriggerPreferences()
+    }
+
+    /// Reveal the icons when a system trigger fires. The auto-hide timer, or
+    /// the next click, hides them again.
+    func applyTriggerPreferences() {
+        TriggerMonitor.shared.onTrigger = { [weak self] _ in self?.expand() }
+        TriggerMonitor.shared.refresh()
     }
 
     // MARK: - Hover to reveal

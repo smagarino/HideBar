@@ -23,10 +23,18 @@ final class StatusBarController {
 
     private var autoHideTimer: Timer?
     private var outsideClickMonitor: Any?
+    private var hoverMonitor: Any?
+    private var localHoverMonitor: Any?
+
+    /// True while the icons are showing only because the pointer is on the
+    /// chevron. Such a reveal collapses again when the pointer leaves the menu
+    /// bar, which a reveal the user clicked for must not do.
+    private var revealedByHover = false
 
     private(set) var collapsed: Bool = Prefs.collapsed {
         didSet {
             Prefs.collapsed = collapsed
+            if collapsed { revealedByHover = false }
             render()
             collapsed ? stopWatchers() : startWatchers()
         }
@@ -52,6 +60,51 @@ final class StatusBarController {
         render()
         if !collapsed { startWatchers() }
         applyHotkeyPreference()
+        applyHoverPreference()
+    }
+
+    // MARK: - Hover to reveal
+
+    /// Start or stop watching the pointer, to match the preference.
+    func applyHoverPreference() {
+        for monitor in [hoverMonitor, localHoverMonitor].compactMap({ $0 }) {
+            NSEvent.removeMonitor(monitor)
+        }
+        hoverMonitor = nil
+        localHoverMonitor = nil
+        guard Prefs.hoverToReveal else { return }
+
+        // Mouse monitors need no Accessibility permission. Keyboard ones do.
+        // A global monitor never sees events that go to this app, and the
+        // pointer sitting on our own chevron produces exactly those, so watch
+        // both streams.
+        hoverMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved]) {
+            [weak self] _ in self?.pointerMoved()
+        }
+        localHoverMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) {
+            [weak self] event in
+            self?.pointerMoved()
+            return event
+        }
+    }
+
+    private func pointerMoved() {
+        let point = NSEvent.mouseLocation
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(point) })
+                ?? NSScreen.main else { return }
+
+        // Cheap test first. This runs on every mouse move.
+        let menuBarBottom = screen.frame.maxY - max(screen.frame.maxY - screen.visibleFrame.maxY, 25)
+        guard point.y >= menuBarBottom else {
+            if revealedByHover { collapse() }   // pointer left the menu bar
+            return
+        }
+
+        guard collapsed, let frame = toggleItem.button?.window?.frame else { return }
+        if frame.insetBy(dx: -6, dy: 0).contains(point) {
+            revealedByHover = true
+            expand()
+        }
     }
 
     /// Register or drop the global shortcut to match the preference.
@@ -176,6 +229,8 @@ final class StatusBarController {
     }
 
     private func stopWatchers() {
+        // The hover monitor is not a watcher: it must keep running while
+        // collapsed, because that is when a hover has to reveal.
         autoHideTimer?.invalidate()
         autoHideTimer = nil
         if let monitor = outsideClickMonitor {

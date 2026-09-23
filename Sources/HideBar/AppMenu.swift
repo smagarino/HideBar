@@ -41,6 +41,14 @@ enum AppMenu {
         outside.state = Prefs.hideOnOutsideClick ? .on : .off
         menu.addItem(outside)
 
+        let hover = NSMenuItem(
+            title: "Reveal on hover",
+            action: #selector(MenuHandler.toggleHoverToReveal), keyEquivalent: "")
+        hover.target = handler
+        hover.state = Prefs.hoverToReveal ? .on : .off
+        hover.toolTip = "Show the icons when the pointer rests on the chevron"
+        menu.addItem(hover)
+
         let slim = NSMenuItem(
             title: "Slim mode (smaller icons)",
             action: #selector(MenuHandler.toggleSlimMode), keyEquivalent: "")
@@ -89,6 +97,11 @@ final class MenuHandler: NSObject {
 
     @objc func toggleOutsideClick() {
         Prefs.hideOnOutsideClick.toggle()
+    }
+
+    @objc func toggleHoverToReveal() {
+        Prefs.hoverToReveal.toggle()
+        controller?.applyHoverPreference()
     }
 
     @objc func toggleSlimMode() {

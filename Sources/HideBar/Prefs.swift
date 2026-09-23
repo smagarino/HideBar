@@ -11,6 +11,7 @@ enum Prefs {
         static let hideOnOutsideClick = "hidebar.pref.hideOnOutsideClick"
         static let slimMode = "hidebar.pref.slimMode"
         static let hotkeyEnabled = "hidebar.pref.hotkeyEnabled"
+        static let hoverToReveal = "hidebar.pref.hoverToReveal"
     }
 
     /// Whether the hidden section was collapsed when we last quit.
@@ -43,5 +44,12 @@ enum Prefs {
     static var hotkeyEnabled: Bool {
         get { d.object(forKey: Key.hotkeyEnabled) as? Bool ?? true }
         set { d.set(newValue, forKey: Key.hotkeyEnabled) }
+    }
+
+    /// Show the hidden icons when the pointer rests on the chevron, with no
+    /// click. Off by default because it watches every mouse move.
+    static var hoverToReveal: Bool {
+        get { d.object(forKey: Key.hoverToReveal) as? Bool ?? false }
+        set { d.set(newValue, forKey: Key.hoverToReveal) }
     }
 }

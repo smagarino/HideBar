@@ -38,10 +38,21 @@ Right-click the chevron for options:
 | --- | --- |
 | Auto-hide | Hide again after 5s / 10s / 30s / 1 min, or Never |
 | Hide when clicking elsewhere | Hide again as soon as you click outside the menu bar |
+| Reveal on hover | Show the icons when the pointer rests on the chevron, with no click |
 | Slim mode | Shrink both icons, from about 62 to about 40 points |
 | Keyboard shortcut | Hide and show with ⌃⌥⌘B |
 | Open at Login | Start HideBar when you log in |
 | Quit HideBar | Exit |
+
+### Reveal on hover
+
+Turn this on and the icons appear when you rest the pointer on the chevron.
+They hide again when the pointer leaves the menu bar. A reveal you clicked for
+behaves as before: it stays until you click again, or until the auto-hide timer
+runs out.
+
+This setting is off by default because it watches every mouse move. It uses
+mouse monitors only, so it needs no Accessibility permission.
 
 ### Slim mode and the keyboard shortcut
 

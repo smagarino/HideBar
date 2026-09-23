@@ -1,59 +1,82 @@
 # HideBar
 
-A free, local alternative to Bartender for hiding macOS menu bar icons.
+Hide the menu bar icons you do not want to see. A small, free macOS app —
+a lightweight alternative to [Bartender](https://www.macbartender.com/).
 
-Installed at `~/Applications/HideBar.app` (no admin rights required).
+- **No permissions.** No Accessibility, no Screen Recording, no admin password.
+- **No private APIs.** Public AppKit only.
+- **Tiny.** One 120 KB app, no dependencies, no background services.
 
-## How to use
+## Install
 
-1. Two new icons appear in your menu bar: a **chevron** (`‹`) and a **separator** (`⋯`).
-2. Hold **⌘** and drag any menu bar icon to the **left of the separator**.
-3. Click the chevron to show/hide everything parked on that side.
+There is no prebuilt download — you build it yourself, which takes a few seconds:
+
+```bash
+git clone https://github.com/smagarino/HideBar.git
+cd HideBar
+./bundle.sh
+cp -R build/HideBar.app ~/Applications/    # or /Applications
+open ~/Applications/HideBar.app
+```
+
+`bundle.sh` compiles the app and signs it ad-hoc. Because you built it locally it
+is never quarantined, so Gatekeeper will not block it.
+
+**Requirements:** macOS 13 or later, and Xcode command line tools
+(`xcode-select --install`). Swift 5.9+.
+
+## Use it
+
+Two icons appear in your menu bar: a chevron (`‹`) and a separator (`⋯`).
+
+1. Hold **⌘** and drag any menu bar icon to the **left of the separator**.
+2. Click the chevron to hide or show everything parked on that side.
 
 Right-click the chevron for options:
 
 | Option | What it does |
 | --- | --- |
-| Auto-hide | Re-hide automatically after 5s / 10s / 30s / 1min, or Never |
-| Hide when clicking elsewhere | Re-hide as soon as you click outside the menu bar |
-| Open at Login | Start HideBar automatically |
+| Auto-hide | Hide again after 5s / 10s / 30s / 1 min, or Never |
+| Hide when clicking elsewhere | Hide again as soon as you click outside the menu bar |
+| Open at Login | Start HideBar when you log in |
 | Quit HideBar | Exit |
 
-Your arrangement, the show/hide state, and all settings persist across restarts.
-
-## Permissions
-
-None. No Accessibility, no Screen Recording, no admin password.
+Your icon arrangement, the hidden/shown state, and all settings survive a restart.
 
 ## How it works
 
-macOS lays out status items right-to-left. HideBar creates two `NSStatusItem`s and,
-to hide, stretches the separator to an enormous width — pushing everything to its
-left off the edge of the screen, where the system stops drawing it. Expanding
-shrinks the separator back and the icons return. This is the same public-API
-technique used by the open-source Hidden Bar and Dozer. No private APIs.
+macOS draws status items from right to left. HideBar creates two `NSStatusItem`s.
+To hide, it stretches the separator to an enormous width. That pushes every icon
+on its left past the edge of the screen, where the system stops drawing them.
+Expanding shrinks the separator back and the icons return.
+
+This is the same public-API technique used by [Hidden Bar](https://github.com/dwarvesf/hidden)
+and [Dozer](https://github.com/Mortennn/Dozer). No private APIs, so nothing here
+breaks System Integrity Protection or needs elevated access.
+
+HideBar refuses to hide while the chevron itself sits left of the separator.
+Otherwise it would hide its own chevron and leave no way to bring it back.
 
 ## Reset
 
-If anything ends up in a strange state (icon positions, settings), reset everything:
+If icon positions or settings end up in a strange state:
 
-```
+```bash
 defaults delete com.local.hidebar
 ```
 
-Then relaunch. HideBar also refuses to hide when the chevron itself has been
-dragged left of the separator, so it can't make itself disappear.
+Then relaunch.
 
-## Building from source
+## What it does not do
 
-```
-./bundle.sh          # builds build/HideBar.app
-```
+This covers the core hide/show feature only. Not implemented: menu bar search,
+hover-to-reveal, triggered presets (show on Wi-Fi change and similar), a second
+menu bar row for notched Macs, and per-item always-hidden sections.
 
-Requires Xcode command line tools. Swift 5.9+, macOS 13+.
+If you want those, [Ice](https://github.com/jordanbaird/Ice) is a free and
+actively maintained app that goes much further, and Bartender itself is the paid
+option.
 
-## Known limits (vs. paid Bartender)
+## License
 
-Not implemented: menu bar search, hover-to-reveal, triggered presets
-(show on Wi-Fi change, etc.), a secondary "Bartender Bar" row, and per-item
-always-hidden sections. This covers the core hide/show feature only.
+MIT — see [LICENSE](LICENSE).

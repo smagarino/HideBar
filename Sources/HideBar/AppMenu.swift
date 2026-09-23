@@ -1,0 +1,96 @@
+import AppKit
+import ServiceManagement
+
+/// Right-click menu on the toggle item.
+enum AppMenu {
+
+    private static let delayOptions: [(String, TimeInterval)] = [
+        ("Never", 0), ("After 5 seconds", 5), ("After 10 seconds", 10),
+        ("After 30 seconds", 30), ("After 1 minute", 60),
+    ]
+
+    static func build(controller: StatusBarController) -> NSMenu {
+        let menu = NSMenu()
+        let handler = MenuHandler.shared
+        handler.controller = controller
+
+        let hint = NSMenuItem(
+            title: "⌘-drag icons left of the separator to hide them",
+            action: nil, keyEquivalent: "")
+        hint.isEnabled = false
+        menu.addItem(hint)
+        menu.addItem(.separator())
+
+        // Auto-hide submenu
+        let autoHide = NSMenuItem(title: "Auto-hide", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        for (title, seconds) in delayOptions {
+            let item = NSMenuItem(title: title, action: #selector(MenuHandler.setDelay(_:)), keyEquivalent: "")
+            item.target = handler
+            item.representedObject = seconds
+            item.state = (Prefs.autoHideDelay == seconds) ? .on : .off
+            sub.addItem(item)
+        }
+        autoHide.submenu = sub
+        menu.addItem(autoHide)
+
+        let outside = NSMenuItem(
+            title: "Hide when clicking elsewhere",
+            action: #selector(MenuHandler.toggleOutsideClick), keyEquivalent: "")
+        outside.target = handler
+        outside.state = Prefs.hideOnOutsideClick ? .on : .off
+        menu.addItem(outside)
+
+        let login = NSMenuItem(
+            title: "Open at Login",
+            action: #selector(MenuHandler.toggleLaunchAtLogin), keyEquivalent: "")
+        login.target = handler
+        login.state = handler.launchAtLoginEnabled ? .on : .off
+        menu.addItem(login)
+
+        menu.addItem(.separator())
+        let quit = NSMenuItem(title: "Quit HideBar", action: #selector(MenuHandler.quit), keyEquivalent: "q")
+        quit.target = handler
+        menu.addItem(quit)
+
+        return menu
+    }
+}
+
+/// Target for menu actions. Menu items hold weak targets, so this is kept alive
+/// as a singleton rather than as a local of `build`.
+final class MenuHandler: NSObject {
+    static let shared = MenuHandler()
+    weak var controller: StatusBarController?
+
+    var launchAtLoginEnabled: Bool {
+        SMAppService.mainApp.status == .enabled
+    }
+
+    @objc func setDelay(_ sender: NSMenuItem) {
+        Prefs.autoHideDelay = sender.representedObject as? TimeInterval ?? 10
+    }
+
+    @objc func toggleOutsideClick() {
+        Prefs.hideOnOutsideClick.toggle()
+    }
+
+    @objc func toggleLaunchAtLogin() {
+        do {
+            if launchAtLoginEnabled {
+                try SMAppService.mainApp.unregister()
+            } else {
+                try SMAppService.mainApp.register()
+            }
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Couldn't change the Open at Login setting"
+            alert.informativeText = error.localizedDescription
+            alert.runModal()
+        }
+    }
+
+    @objc func quit() {
+        NSApp.terminate(nil)
+    }
+}

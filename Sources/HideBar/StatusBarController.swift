@@ -109,17 +109,19 @@ final class StatusBarController {
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(point) })
                 ?? NSScreen.main else { return }
 
-        // Cheap test first. This runs on every mouse move.
-        let menuBarBottom = screen.frame.maxY - max(screen.frame.maxY - screen.visibleFrame.maxY, 25)
-        guard point.y >= menuBarBottom else {
-            if revealedByHover { collapse() }   // pointer left the menu bar
-            return
-        }
-
-        guard collapsed, let frame = toggleItem.button?.window?.frame else { return }
-        if frame.insetBy(dx: -6, dy: 0).contains(point) {
+        switch HoverRules.decide(pointer: point,
+                                 chevron: toggleItem.button?.window?.frame,
+                                 screenMaxY: screen.frame.maxY,
+                                 visibleMaxY: screen.visibleFrame.maxY,
+                                 reveal: reveal,
+                                 revealedByHover: revealedByHover) {
+        case .doNothing:
+            break
+        case .reveal:
             revealedByHover = true
             expand()
+        case .collapse:
+            collapse()
         }
     }
 
@@ -200,22 +202,22 @@ final class StatusBarController {
 
     @objc private func toggleClicked() {
         guard let event = NSApp.currentEvent else { return }
-        if event.type == .rightMouseUp {
+        switch ClickRouter.action(isRightClick: event.type == .rightMouseUp,
+                                  optionHeld: event.modifierFlags.contains(.option),
+                                  hasAlwaysHiddenSection: alwaysHiddenSeparator != nil) {
+        case .showMenu:
             showMenu()
-            return
+        case .toggleAlwaysHiddenSection:
+            reveal = RevealMachine.next(from: reveal, command: .toggleAlwaysHiddenSection)
+        case .toggleHiddenSection:
+            collapsed ? expand() : collapse(userInitiated: true)
         }
-        // Option-click reaches the always-hidden section.
-        if event.modifierFlags.contains(.option), alwaysHiddenSeparator != nil {
-            reveal = (reveal == .all) ? .none : .all
-            return
-        }
-        collapsed ? expand() : collapse(userInitiated: true)
     }
 
-    func expand() { if reveal == .none { reveal = .hidden } }
+    func expand() { reveal = RevealMachine.next(from: reveal, command: .expand) }
 
     /// Show every item, including the always-hidden section.
-    func showAll() { reveal = .all }
+    func showAll() { reveal = RevealMachine.next(from: reveal, command: .showAll) }
 
     /// Collapsing while the toggle sits to the LEFT of the separator would push
     /// the toggle off-screen too, leaving no way to bring it back — and
@@ -226,14 +228,13 @@ final class StatusBarController {
             if userInitiated { warnAboutTogglePosition() }
             return
         }
-        reveal = .none
+        reveal = RevealMachine.next(from: reveal, command: .collapse)
     }
 
     private var toggleIsRightOfSeparator: Bool {
-        guard let toggleX = toggleItem.button?.window?.frame.minX,
-              let separatorX = separatorItem.button?.window?.frame.minX
-        else { return true }   // can't tell; don't block the user
-        return toggleX > separatorX
+        CollapseGuard.mayCollapse(
+            toggleMinX: toggleItem.button?.window?.frame.minX,
+            separatorMinX: separatorItem.button?.window?.frame.minX)
     }
 
     private func warnAboutTogglePosition() {
@@ -268,13 +269,12 @@ final class StatusBarController {
         outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown]
         ) { [weak self] _ in
-            // Ignore clicks inside the menu bar itself, otherwise revealing an
-            // icon and then clicking it would collapse the bar out from under it.
             let point = NSEvent.mouseLocation
             guard let screen = NSScreen.screens.first(where: { $0.frame.contains(point) })
                     ?? NSScreen.main else { return }
-            let menuBarHeight = screen.frame.maxY - screen.visibleFrame.maxY
-            if point.y < screen.frame.maxY - max(menuBarHeight, 25) {
+            if OutsideClickRules.shouldCollapse(pointer: point,
+                                                screenMaxY: screen.frame.maxY,
+                                                visibleMaxY: screen.visibleFrame.maxY) {
                 self?.collapse()
             }
         }

@@ -167,17 +167,24 @@ Then relaunch HideBar.
 swift test
 ```
 
-The subtle rules live in a separate `HideBarCore` library with no AppKit and no
-stored state, so they can be tested directly: which separator stretches in each
-state, and whether a power reading is worth revealing the menu bar for.
+Every decision the app makes lives in a separate `HideBarCore` library, with no
+AppKit and no stored state, so a test can call it directly. That covers which
+separator stretches in each state, how a click is routed, when a hover reveals or
+hides, when a click elsewhere hides, whether the chevron may hide itself, and
+whether a power reading is worth revealing the menu bar for.
 
-Two of the tests exist because those bugs happened. One checks that the app never
-stretches both separators at once, which once left the chevron behind the camera
-notch where macOS never drew it. The other checks that a battery percentage
-change alone reveals nothing, which would otherwise reopen the menu bar every few
-minutes.
+Several tests exist because those bugs happened:
 
-The status bar itself is not covered. Testing it needs a real menu bar.
+| Test | The bug it guards |
+| --- | --- |
+| Never stretch both separators | Once left the chevron behind the camera notch, where macOS never drew it |
+| A percentage change reveals nothing | Would reopen the menu bar every few minutes |
+| A clicked reveal survives the pointer leaving | Clicking the chevron would otherwise be useless |
+| A click in the menu bar does not hide | Would pull an icon away mid-click |
+| Option-click is ordinary without the second section | Would do nothing at all |
+
+What is left is the AppKit glue that applies those decisions to real status
+items. Testing that needs a real menu bar, so it is checked by hand.
 
 ## What it does not do
 

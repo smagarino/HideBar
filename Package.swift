@@ -5,6 +5,15 @@ let package = Package(
     name: "HideBar",
     platforms: [.macOS(.v13)],
     targets: [
-        .executableTarget(name: "HideBar", path: "Sources/HideBar")
+        // Pure rules, no AppKit and no stored state, so they can be tested.
+        .target(name: "HideBarCore", path: "Sources/HideBarCore"),
+        .executableTarget(
+            name: "HideBar",
+            dependencies: ["HideBarCore"],
+            path: "Sources/HideBar"),
+        .testTarget(
+            name: "HideBarCoreTests",
+            dependencies: ["HideBarCore"],
+            path: "Tests/HideBarCoreTests"),
     ]
 )

@@ -161,6 +161,24 @@ defaults delete com.local.hidebar
 
 Then relaunch HideBar.
 
+## Tests
+
+```bash
+swift test
+```
+
+The subtle rules live in a separate `HideBarCore` library with no AppKit and no
+stored state, so they can be tested directly: which separator stretches in each
+state, and whether a power reading is worth revealing the menu bar for.
+
+Two of the tests exist because those bugs happened. One checks that the app never
+stretches both separators at once, which once left the chevron behind the camera
+notch where macOS never drew it. The other checks that a battery percentage
+change alone reveals nothing, which would otherwise reopen the menu bar every few
+minutes.
+
+The status bar itself is not covered. Testing it needs a real menu bar.
+
 ## What it does not do
 
 Not implemented: menu bar search and a second menu bar row for notched Macs.

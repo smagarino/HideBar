@@ -1,4 +1,5 @@
 import AppKit
+import HideBarCore
 
 /// Drives the two status items that implement hiding.
 ///
@@ -8,12 +9,10 @@ import AppKit
 /// The user chooses what gets hidden by Cmd-dragging icons across the separator.
 final class StatusBarController {
 
-    /// Width the separator takes when collapsed. AppKit clamps this to the
-    /// space actually available, which is exactly what we want.
-    private static let collapsedWidth: CGFloat = 10_000
-    /// Width of the separator while expanded. Slim mode trades a comfortable
-    /// click target for roughly 45 points of menu bar space.
-    private static var expandedWidth: CGFloat { Prefs.slimMode ? 1 : 20 }
+    /// Separator widths come from LayoutRules, which the tests cover.
+    private static var expandedWidth: CGFloat {
+        LayoutRules.restingWidth(slim: Prefs.slimMode)
+    }
 
     /// Width of the toggle. Normal mode lets the image size it.
     private static var toggleWidth: CGFloat { NSStatusItem.variableLength }
@@ -34,16 +33,6 @@ final class StatusBarController {
     /// chevron. Such a reveal collapses again when the pointer leaves the menu
     /// bar, which a reveal the user clicked for must not do.
     private var revealedByHover = false
-
-    /// How much of the menu bar is on show.
-    enum Reveal {
-        /// Only the items to the right of the first separator.
-        case none
-        /// Plus the ordinary hidden section.
-        case hidden
-        /// Plus the always-hidden section.
-        case all
-    }
 
     private(set) var reveal: Reveal = Prefs.collapsed ? .none : .hidden {
         didSet {
@@ -167,19 +156,17 @@ final class StatusBarController {
     private func render() {
         toggleItem.length = Self.toggleWidth
 
+        let plan = LayoutRules.layout(for: reveal, slim: Prefs.slimMode)
         let showsHidden = (reveal != .none)
-        separatorItem.length = showsHidden ? Self.expandedWidth : Self.collapsedWidth
-        separatorItem.button?.image = showsHidden ? symbol("ellipsis.circle", "Separator") : nil
+
+        separatorItem.length = plan.hidden
+        separatorItem.button?.image = plan.showsHiddenImage
+            ? symbol("ellipsis.circle", "Separator") : nil
 
         if let always = alwaysHiddenSeparator {
-            // Stretch it only while the ordinary section shows and this one must
-            // not. When everything is collapsed the first separator already
-            // pushes this one off-screen, so leave it small: two enormous items
-            // at once overflow the layout.
-            let mustPush = (reveal == .hidden)
-            always.length = mustPush ? Self.collapsedWidth : Self.expandedWidth
-            always.button?.image = mustPush
-                ? nil : symbol("eye.slash.circle", "Always hidden separator")
+            always.length = plan.alwaysHidden
+            always.button?.image = plan.showsAlwaysHiddenImage
+                ? symbol("eye.slash.circle", "Always hidden separator") : nil
         }
 
         toggleItem.button?.image = symbol(

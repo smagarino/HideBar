@@ -1,5 +1,6 @@
 import AppKit
 import IOKit.ps
+import HideBarCore
 
 /// Watches the system for events worth a glance at the menu bar, and reveals
 /// the hidden icons when one happens.
@@ -16,11 +17,9 @@ final class TriggerMonitor {
     private var runLoopSource: CFRunLoopSource?
     private var screenObserver: NSObjectProtocol?
 
-    private var wasOnBattery: Bool?
-    private var lowBatteryAlreadyFired = false
-
-    /// Low battery means at or below this percentage.
-    private static let lowBatteryThreshold = 20
+    /// Carried between readings so a change can be spotted. The decision
+    /// itself lives in TriggerRules, which the tests cover.
+    private var triggerState = TriggerState()
 
     // MARK: - Lifecycle
 
@@ -35,7 +34,7 @@ final class TriggerMonitor {
 
     private func startPowerWatch() {
         guard runLoopSource == nil else { return }
-        wasOnBattery = currentlyOnBattery()
+        triggerState = TriggerState(wasOnBattery: currentlyOnBattery())
         guard let source = IOPSNotificationCreateRunLoopSource({ _ in
             DispatchQueue.main.async { TriggerMonitor.shared.powerChanged() }
         }, nil)?.takeRetainedValue() else { return }
@@ -47,29 +46,25 @@ final class TriggerMonitor {
         guard let source = runLoopSource else { return }
         CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .defaultMode)
         runLoopSource = nil
-        wasOnBattery = nil
-        lowBatteryAlreadyFired = false
+        triggerState = TriggerState()
     }
 
     /// The power notification also fires for every percentage change, so act
     /// only on a real transition. Otherwise the icons would reveal constantly.
     fileprivate func powerChanged() {
-        let onBattery = currentlyOnBattery()
+        let snapshot = PowerSnapshot(onBattery: currentlyOnBattery(),
+                                     percent: batteryPercent())
+        let outcome = TriggerRules.decide(
+            state: &triggerState,
+            snapshot: snapshot,
+            revealOnPowerChange: Prefs.revealOnPowerChange,
+            revealOnLowBattery: Prefs.revealOnLowBattery)
 
-        if Prefs.revealOnPowerChange, let previous = wasOnBattery, previous != onBattery {
-            onTrigger?(onBattery ? "switched to battery" : "plugged in")
+        if outcome.powerChanged {
+            onTrigger?(snapshot.onBattery ? "switched to battery" : "plugged in")
         }
-        wasOnBattery = onBattery
-
-        guard Prefs.revealOnLowBattery else { return }
-        let percent = batteryPercent()
-        if onBattery && percent <= Self.lowBatteryThreshold {
-            if !lowBatteryAlreadyFired {
-                lowBatteryAlreadyFired = true
-                onTrigger?("battery at \(percent)%")
-            }
-        } else {
-            lowBatteryAlreadyFired = false   // re-arm once charged or plugged in
+        if outcome.lowBattery {
+            onTrigger?("battery at \(snapshot.percent)%")
         }
     }
 
